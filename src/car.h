@@ -13,7 +13,7 @@ struct Car {
     double price;
     string condition;
 
-    // Composite key generation - refer to main
+    // Composite key generation - refer to main 
     string getKey() const {
         return brand + "|" + model + "|" + to_string(year);
     }

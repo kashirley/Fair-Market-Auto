@@ -4,7 +4,7 @@ import numpy as np
 
 path = kagglehub.dataset_download("zain280/car-dataset")
 path = path + "\Car_Data.csv"
-#print("Path to dataset: ", path)
+#print("Path to dataset: ", path) 
 
 df = pd.read_csv(path)
 df = df.drop('ID', axis=1)

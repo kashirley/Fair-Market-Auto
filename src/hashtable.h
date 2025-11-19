@@ -3,7 +3,7 @@
 #include <list>
 #include <string>
 #include <cmath>
-#include <functional> //added in after issue with hash function
+#include <functional> //added in after issue with hash function 
 #include "car.h"
 //using namespace std;
 //TESTER HASHTABLE.H FILE -  PLEASE DEBUG
@@ -64,7 +64,7 @@ public:
     }
 
     void insert(const K& key, const V& value) {
-        // Check load factor ad rehash if needed
+        // Check load factor + rehash if needed
         if ((double)num_elements / table_size > MAX_LOAD_FACTOR) {
             rehash();
         }

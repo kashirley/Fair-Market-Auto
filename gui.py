@@ -7,7 +7,7 @@ import os
 # RESOLVED: UTF-8 char removed - Error: SyntaxError: Non-UTF-8 code starting with '\x95' in file 
 #C:\Users\katie\source\COP3530\Project 3\Fair-Market-Auto\gui.py on line 140, 
 #but no encoding declared; see https://peps.python.org/pep-0263/ for details
-# Press any key to continue . . . 
+# Press any key to continue . . .  
 
 class CarSearchGUI:
     def __init__(self, root):
