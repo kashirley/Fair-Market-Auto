@@ -11,3 +11,5 @@ Run datacleaner.py first
 Next cd .\src and run cl /EHsc /std::c++14 main.cpp
 Next cd ..
 Next python gui.py
+
+Make sure the compiled executable (main.exe) stays inside the src/ folder, as the GUI calls it from there

@@ -3,6 +3,9 @@
 #include <vector>
 #include <string>
 #include "car.h"
+
+using namespace std;
+
 //TESTER TREEMAP.H FILE -  PLEASE DEBUG 
 template<typename K, typename V>
 class TreeMap {
