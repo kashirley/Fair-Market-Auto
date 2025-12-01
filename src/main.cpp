@@ -2,16 +2,16 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <chrono>
+#include <map>
 #include <algorithm>
+#include <numeric>
+#include <chrono>
 #include "car.h"
-#include "hashtable.h"
-#include "treemap.h"
 
 using namespace std;
 
+
 vector<Car> loadCarsFromCSV(const string& filename) {
-    //cout << "attempting to load data from " << filename << endl; //debugging line 
     vector<Car> cars;
     ifstream file(filename);
 
@@ -21,16 +21,14 @@ vector<Car> loadCarsFromCSV(const string& filename) {
     }
 
     string line;
-    getline(file, line); // skipping header
-
-    //cout << "loading data..." << endl; //debugging line
+    getline(file, line);
 
     while (getline(file, line)) {
         stringstream ss(line);
         Car car;
         string price_str, year_str, mileage_str, skip;
 
-        getline(ss, skip, ',');      // ID / index column skipped
+        getline(ss, skip, ',');     
         getline(ss, car.brand, ',');
         getline(ss, car.model, ',');
         getline(ss, year_str, ',');
@@ -39,120 +37,159 @@ vector<Car> loadCarsFromCSV(const string& filename) {
         getline(ss, price_str, ',');
         getline(ss, car.condition, ',');
 
-        car.year = stoi(year_str);
-        car.mileage = stoi(mileage_str);
-        car.price = stod(price_str);
+        try {
+            car.year    = stoi(year_str);
+            car.mileage = stoi(mileage_str);
+            car.price   = stod(price_str);
+        } catch (...) {
+            continue;
+        }
 
         cars.push_back(car);
     }
 
     file.close();
-    //cout << "data loading complete. " << cars.size() << " records loaded." << endl; //debugging line
     return cars;
 }
 
-int main(int argc, char* argv[]) {
-    //cout << "Program started" << endl; //debugging line
-    if (argc < 5) {
-        cout << "Usage: car_search <hashtable|treemap> <brand> <model> <year>" << endl;
-        return 1;
+
+
+double mean(const vector<double>& prices) {
+    if (prices.empty()) return 0.0;
+    return accumulate(prices.begin(), prices.end(), 0.0) / prices.size();
+}
+
+double median(vector<double> prices) {
+    if (prices.empty()) return 0.0;
+    sort(prices.begin(), prices.end());
+    size_t n = prices.size();
+    if (n % 2 == 1) return prices[n / 2];
+    return (prices[n / 2 - 1] + prices[n / 2]) / 2.0;
+}
+
+void printStats(const vector<Car>& results) {
+    if (results.empty()) {
+        cout << "No cars found.\n";
+        return;
     }
 
-    string structure = argv[1];
-    string brand = argv[2];
-    string model = argv[3];
-    int year = stoi(argv[4]);
+    vector<double> prices;
+    for (const auto& c : results) prices.push_back(c.price);
 
-    // Load data w/ checks - updated to include error handling
-    vector<Car> allCars = loadCarsFromCSV("data.csv"); //Updated - issue with accessing file
+    double low = *min_element(prices.begin(), prices.end());
+    double high = *max_element(prices.begin(), prices.end());
+    double avg = mean(prices);
+    double med = median(prices);
+
+    cout << "Matches: " << results.size() << "\n";
+    cout << "Lowest price:  $" << low << "\n";
+    cout << "Highest price: $" << high << "\n";
+    cout << "Mean price:    $" << avg << "\n";
+    cout << "Median price:  $" << med << "\n\n";
+}
+
+
+
+using CarMap = map<int, Car>;
+
+vector<Car> searchByMake(const CarMap& carMap, const string& make) {
+    vector<Car> results;
+    for (const auto& [id, car] : carMap)
+        if (car.brand == make) results.push_back(car);
+    return results;
+}
+
+vector<Car> searchByModel(const CarMap& carMap, const string& model) {
+    vector<Car> results;
+    for (const auto& [id, car] : carMap)
+        if (car.model == model) results.push_back(car);
+    return results;
+}
+
+vector<Car> searchByCondition(const CarMap& carMap, const string& cond) {
+    vector<Car> results;
+    for (const auto& [id, car] : carMap)
+        if (car.condition == cond) results.push_back(car);
+    return results;
+}
+
+
+
+int main() {
+    cout << "=== Car Inventory Program (std::map Version) ===\n";
+
+    // 1. Load cars
+    vector<Car> allCars = loadCarsFromCSV("data.csv");
 
     if (allCars.empty()) {
-        cout << "ERROR: No data loaded" << endl;
+        cerr << "No data loaded. Make sure data.csv exists.\n";
         return 1;
     }
 
-    // search key - refer to car.h to ensure format matches
-    string searchKey = brand + "|" + model + "|" + to_string(year);
-    vector<Car> results;
+    cout << "Loaded " << allCars.size() << " cars.\n";
 
-    auto start = chrono::high_resolution_clock::now();
+    // 2. Insert into map (timed)
+    CarMap carMap;
+    auto startInsert = chrono::high_resolution_clock::now();
 
-    if (structure == "hashtable") {
-        //cout << "running hashtable" << endl; //debugging line
-        HashTable<string, Car> ht;
-        for (const auto& car : allCars)
-            ht.insert(car.getKey(), car);
-        //cout << "hashtable complete" << endl; //debugging line
-        results = ht.search(searchKey);
-    }
-    else {
-        TreeMap<string, Car> tm;
-        for (const auto& car : allCars)
-            tm.insert(car.getKey(), car);
-        results = tm.search(searchKey);
-    }
+    int id = 0;
+    for (const auto& car : allCars)
+        carMap[id++] = car;
 
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+    auto endInsert = chrono::high_resolution_clock::now();
+    auto insertTime = chrono::duration_cast<chrono::milliseconds>(endInsert - startInsert);
 
-    // Output results
-    cout << "TIME_MS:" << duration.count() / 1000.0 << endl;
-    cout << "COUNT:" << results.size() << endl;
+    cout << "Insertion time: " << insertTime.count() << " ms\n\n";
 
-    if (!results.empty()) {
-        // ----- price stats -----
-        double lowest  = results[0].price;
-        double highest = results[0].price;
-        double sum     = 0.0;
+    // 3. Search loop
+    while (true) {
+        cout << "Search Options:\n";
+        cout << "  1 = Make\n";
+        cout << "  2 = Model\n";
+        cout << "  3 = Condition\n";
+        cout << "  0 = Exit\n";
+        cout << "Choose: ";
 
-        const Car* lowestCar  = &results[0];
-        const Car* highestCar = &results[0];
+        int choice;
+        cin >> choice;
+        if (choice == 0) break;
 
-        for (const auto& car : results) {
-            if (car.price < lowest) {
-                lowest = car.price;
-                lowestCar = &car;
-            }
-            if (car.price > highest) {
-                highest = car.price;
-                highestCar = &car;
-            }
-            sum += car.price;
+        string term;
+        cout << "Enter search term: ";
+        cin >> term;
+
+        auto startSearch = chrono::high_resolution_clock::now();
+        vector<Car> matches;
+
+        if (choice == 1)
+            matches = searchByMake(carMap, term);
+        else if (choice == 2)
+            matches = searchByModel(carMap, term);
+        else if (choice == 3)
+            matches = searchByCondition(carMap, term);
+        else {
+            cout << "Invalid selection.\n\n";
+            continue;
         }
 
-        // median price + median example
-        vector<Car> sorted = results;
-        sort(sorted.begin(), sorted.end(),
-             [](const Car& a, const Car& b) { return a.price < b.price; });
+        auto endSearch = chrono::high_resolution_clock::now();
+        auto searchTime = chrono::duration_cast<chrono::microseconds>(endSearch - startSearch);
 
-        Car medianCar;
-        size_t n = sorted.size();
-        if (n % 2 == 1)
-            medianCar = sorted[n / 2];
-        else
-            medianCar = sorted[n / 2];
+        cout << "\nSearch time: " << searchTime.count() << " microseconds\n";
+        printStats(matches);
 
-        double medianPrice = medianCar.price;
+        if (!matches.empty()) {
+            cout << "Example cars:\n";
+            int displayed = 0;
+            for (const auto& car : matches) {
+                cout << "  - " << car.toString() << "\n";
+                if (++displayed >= 5) break;   // only first 5
+            }
+        }
 
-        cout << "LOWEST:" << lowest << endl;
-        cout << "HIGHEST:" << highest << endl;
-        cout << "AVERAGE:" << (sum / results.size()) << endl;
-        cout << "MEDIAN:" << medianPrice << endl;
-
-        cout << "---CARS---" << endl;
-
-        // Example matches for lowest / median / highest
-        cout << "Lowest example: " << lowestCar->toString() << endl;
-        cout << "Median example: " << medianCar.toString() << endl;
-        cout << "Highest example: " << highestCar->toString() << endl;
-        cout << endl;
-
-        // All matching vehicles
-        for (const auto& car : results)
-            cout << car.toString() << endl;
+        cout << "\n-------------------------------------------\n\n";
     }
-    else
-        cout << "No matching cars found." << endl;
 
+    cout << "Goodbye!\n";
     return 0;
 }

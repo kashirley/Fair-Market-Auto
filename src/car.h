@@ -13,12 +13,12 @@ struct Car {
     double price;
     string condition;
 
-    // Composite key generation - refer to main 
+    // Composite key generation (not used in map-only version but kept for compatibility)
     string getKey() const {
         return brand + "|" + model + "|" + to_string(year);
     }
 
-    // Displaying car info
+    // Convert to readable string
     string toString() const {
         ostringstream oss;
         oss << year << " " << brand << " " << model
