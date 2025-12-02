@@ -21,10 +21,10 @@ struct Car {
     // Convert to readable string
     string toString() const {
         ostringstream oss;
-        oss << year << " " << brand << " " << model
-            << " (" << color << ", " << condition << ") - $"
-            << price << " - " << mileage << " mi";
-        return oss.str();
-    }
+        oss << "$" << price << " - " << year << " " << brand << " " << model << " (" << color << ", " << mileage << " miles)";
+    return oss.str();
+}
+
+
 }; 
 #endif

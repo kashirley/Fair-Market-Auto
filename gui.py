@@ -216,46 +216,49 @@ class CarSearchGUI:
 
         count_str = stats.get("COUNT", "0")
 
-        if count_str != "0":
-            # Price stats
-            self.results_text.insert(tk.END, "Price Statistics:\n", "section")
-            self.results_text.insert(tk.END, f"  Lowest:  ${stats.get('LOWEST', 'N/A')}\n")
-            self.results_text.insert(tk.END, f"  Highest: ${stats.get('HIGHEST', 'N/A')}\n")
-            self.results_text.insert(tk.END, f"  Median:  ${stats.get('MEDIAN', 'N/A')}\n")
-            self.results_text.insert(tk.END, f"  Average: ${stats.get('AVERAGE', 'N/A')}\n\n")
-
-            # Deal evaluation
-            if asking_price is not None:
-                avg_str = stats.get("AVERAGE")
-                try:
-                    avg_val = float(avg_str)
-                    diff = asking_price - avg_val
-                    pct = (diff / avg_val) * 100 if avg_val else 0
-
-                    self.results_text.insert(tk.END, "Deal Evaluation:\n", "section")
-                    self.results_text.insert(tk.END, f"  Your price: ${asking_price:.2f}\n")
-                    self.results_text.insert(tk.END, f"  Difference from average: {diff:+.0f} ({pct:+.1f}%)\n")
-
-                    if diff < 0:
-                        msg = "  This looks like a good deal."
-                    elif abs(diff) <= avg_val * 0.05:
-                        msg = "  This looks like a fair deal."
-                    else:
-                        msg = "  This looks a bit expensive."
-
-                    self.results_text.insert(tk.END, f"{msg}\n\n")
-                except:
-                    self.results_text.insert(tk.END, "Deal Evaluation:\n  (Average unavailable.)\n\n")
-
-            # Cars
-            self.results_text.insert(tk.END, f"{'=' * 80}\n", "divider")
-            self.results_text.insert(tk.END, "Matching Vehicles:\n\n", "section")
-
-            for car in cars:
-                self.results_text.insert(tk.END, f"  {car}\n")
-        else:
+        if count_str == "0":
             self.results_text.insert(tk.END, "\nNo matching vehicles found.\n")
+            return
 
+        self.results_text.insert(tk.END, "Price Statistics:\n", "section")
+        self.results_text.insert(tk.END, f"  Lowest:  ${stats.get('LOWEST', 'N/A')}\n")
+        self.results_text.insert(tk.END, f"  Highest: ${stats.get('HIGHEST', 'N/A')}\n")
+        self.results_text.insert(tk.END, f"  Median:  ${stats.get('MEDIAN', 'N/A')}\n")
+        self.results_text.insert(tk.END, f"  Average: ${stats.get('AVERAGE', 'N/A')}\n\n")
+
+        # Deal evaluation
+        if asking_price is not None:
+            avg_str = stats.get("AVERAGE")
+            try:
+                avg_val = float(avg_str)
+                diff = asking_price - avg_val
+                pct = (diff / avg_val) * 100 if avg_val else 0
+
+                self.results_text.insert(tk.END, "Deal Evaluation:\n", "section")
+                self.results_text.insert(tk.END, f"  Your price: ${asking_price:.2f}\n")
+                self.results_text.insert(tk.END, f"  Difference from average: ${diff:+.0f} ({pct:+.1f}%)\n")
+
+                if diff <= -0.20 * avg_val:
+                    msg = "  This is a bargain!"
+                elif diff < 0:
+                    msg = "  This looks like a good deal."
+                elif abs(diff) <= avg_val * 0.05:
+                    msg = "  This looks like a fair deal."
+                elif diff >= 0.30 * avg_val:
+                    msg = "  This price is outrageous!"
+                else:
+                    msg = "  This looks a bit expensive."
+
+                self.results_text.insert(tk.END, f"{msg}\n\n")
+
+            except Exception:
+                self.results_text.insert(tk.END, "Deal Evaluation:\n  (Average unavailable.)\n\n")
+
+        self.results_text.insert(tk.END, f"{'=' * 80}\n", "divider")
+        self.results_text.insert(tk.END, "Matching Vehicles (sorted by price):\n\n", "section")
+
+        for car in cars:
+            self.results_text.insert(tk.END, f"  {car}\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
